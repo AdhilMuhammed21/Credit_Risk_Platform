@@ -14,3 +14,7 @@ models/
 
 # environment
 venv/
+
+.env
+
+data/database/credit_risk.db
