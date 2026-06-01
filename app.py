@@ -319,7 +319,7 @@ with st.sidebar:
 
     page = st.radio(
         "Navigation",
-        ["Dashboard", "Prediction", "AI Chatbot"],
+        ["Dashboard", "Prediction", "Business Rules", "AI Chatbot"],
         label_visibility="collapsed"
     )
 
@@ -489,6 +489,59 @@ elif page == "Prediction":
                 {icon} {title}
             </div>
             <div style='font-size:13px;color:{tc}cc;'>{body}</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+
+# ═══════════════════════════════════════════════════════════════════
+# BUSINESS RULES
+# ═══════════════════════════════════════════════════════════════════
+elif page == "Business Rules":
+
+    st.markdown("""
+    <div class="page-header">
+        <div class="page-header-label">Guardrails & Strategy</div>
+        <div class="page-header-title">Business Decision Rules</div>
+        <div class="page-header-sub">Human-readable policy constraints derived from model risk matrices and feature behaviors.</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown('<div class="section-label">Active Underwriting Rules</div>', unsafe_allow_html=True)
+
+    try:
+        from src.rules.business_rules import RULES
+        
+        for idx, rule in enumerate(RULES, start=1):
+            band = rule.get('risk', 'Low Risk')
+            
+            badge_class = {
+                "High Risk": "risk-high",
+                "Medium Risk": "risk-medium",
+                "Low Risk": "risk-low",
+            }.get(band, "risk-low")
+            
+            dot = {"High Risk": "🔴", "Medium Risk": "🟡", "Low Risk": "🟢"}.get(band, "⚪")
+
+            st.markdown(f"""
+            <div style="background: #0d1117; border: 1px solid #1e2738; border-radius: 12px; padding: 20px; margin-bottom: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;">
+                    <div>
+                        <div style="font-family: 'DM Mono', monospace; font-size: 11px; color: #3b82f6; letter-spacing: 1px; margin-bottom: 6px;">
+                            RULE {idx:02d}
+                        </div>
+                        <div style="font-size: 15px; font-weight: 400; color: #e2e8f0; line-height: 1.5;">
+                            {rule['rule']}
+                        </div>
+                    </div>
+                    <span class="risk-badge {badge_class}" style="white-space: nowrap;">{dot} {band}</span>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+    except ModuleNotFoundError:
+        st.markdown("""
+        <div style="background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); border-radius: 10px; padding: 16px; color: #f87171; font-size: 14px;">
+            ⚠️ <b>Module Error:</b> Rules asset definition file could not be discovered at pathway path: <code>src.rules.business_rules</code>
         </div>
         """, unsafe_allow_html=True)
 
