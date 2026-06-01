@@ -257,18 +257,6 @@ div.stButton > button:active { transform: translateY(0) !important; }
     word-break: break-word;
 }
 
-/* ── Example chip ── */
-.chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
-.chip {
-    background: #0d1117;
-    border: 1px solid #1e2738;
-    border-radius: 20px;
-    padding: 5px 12px;
-    font-size: 12px;
-    color: #64748b;
-    cursor: default;
-}
-
 /* ── Divider ── */
 hr { border-color: #1e2738 !important; margin: 24px 0 !important; }
 
@@ -506,7 +494,7 @@ elif page == "Prediction":
 
 
 # ═══════════════════════════════════════════════════════════════════
-# AI CHATBOT (FIXED CONDITIONAL MARKDOWN LAYOUTS)
+# AI CHATBOT (CALLBACK DRIVEN CHIPS)
 # ═══════════════════════════════════════════════════════════════════
 elif page == "AI Chatbot":
 
@@ -519,26 +507,70 @@ elif page == "AI Chatbot":
     """, unsafe_allow_html=True)
 
     st.markdown("""
-    <div style='margin-bottom:18px;'>
+    <div style='margin-bottom:6px;'>
         <div style='font-family:"DM Mono",monospace;font-size:10px;color:#475569;
-                    letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;'>
+                    letter-spacing:1.5px;text-transform:uppercase;'>
             Example Questions
-        </div>
-        <div class="chip-row">
-            <span class="chip">What is the average income of defaulters?</span>
-            <span class="chip">Top 10 highest income customers</span>
-            <span class="chip">Average credit amount for non-defaulters</span>
-            <span class="chip">Average annuity for high-risk customers</span>
-            <span class="chip">Count of defaults by gender</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
 
+    # List of example questions
+    example_questions = [
+        "What is the average income of defaulters?",
+        "Top 10 highest income customers",
+        "Average credit amount for non-defaulters",
+        "Average annuity for high-risk customers",
+        "Count of defaults by gender"
+    ]
+
+    # Initialize chatbot value state inside widget key namespace directly
+    if "user_question" not in st.session_state:
+        st.session_state.user_question = ""
+
+    # Callback update logic directly bound to component interaction loop
+    def set_question(text):
+        st.session_state.user_question = text
+
+    # Scoped style sheet rules targeting the horizontal chip grid container blocks
+    st.markdown("""
+    <style>
+    div[data-testid="stHorizontalBlock"] div.stButton > button {
+        background: #0d1117 !important;
+        color: #64748b !important;
+        border: 1px solid #1e2738 !important;
+        border-radius: 20px !important;
+        padding: 4px 12px !important;
+        font-size: 12px !important;
+        font-weight: 400 !important;
+        letter-spacing: 0px !important;
+        width: auto !important;
+        transition: all 0.2s !important;
+    }
+    div[data-testid="stHorizontalBlock"] div.stButton > button:hover {
+        background: #1e2738 !important;
+        color: #e2e8f0 !important;
+        border-color: #3b82f6 !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # Render clean structural layout columns using callbacks to bypass local component update lags
+    chip_cols = st.columns(len(example_questions))
+    for col, quest in zip(chip_cols, example_questions):
+        with col:
+            st.button(quest, key=f"chip_{quest}", on_click=set_question, args=(quest,))
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # Primary Input field reading from active session key dynamically
     question = st.text_input(
         "Your question",
         placeholder="e.g. What is the average income of defaulters?",
-        label_visibility="collapsed"
+        label_visibility="collapsed",
+        key="user_question"
     )
+
     c1, c2 = st.columns([4, 1])
     with c1:
         ask_clicked = st.button("Ask AI →")
@@ -553,7 +585,6 @@ elif page == "AI Chatbot":
 
         result = response.get("result", "No result returned.")
         
-        # Handle dataframe-like output cleanly
         if hasattr(result, "to_html"):
             result_text = result.to_html(
                 index=False,
@@ -563,7 +594,6 @@ elif page == "AI Chatbot":
         else:
             result_text = str(result)
 
-        # ── Isolated Execution Logic to prevent Streamlit Variable Escaping ──
         if show_sql and response.get("sql"):
             sql_html = f'<div class="sql-box">{response["sql"]}</div>'
             st.markdown(f"""
