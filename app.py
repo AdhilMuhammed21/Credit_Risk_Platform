@@ -506,7 +506,7 @@ elif page == "Prediction":
 
 
 # ═══════════════════════════════════════════════════════════════════
-# AI CHATBOT
+# AI CHATBOT (FIXED CONDITIONAL MARKDOWN LAYOUTS)
 # ═══════════════════════════════════════════════════════════════════
 elif page == "AI Chatbot":
 
@@ -551,24 +551,39 @@ elif page == "AI Chatbot":
 
         st.markdown(f'<div class="chat-user">{question}</div>', unsafe_allow_html=True)
 
-        sql_block = ""
+        result = response.get("result", "No result returned.")
+        
+        # Handle dataframe-like output cleanly
+        if hasattr(result, "to_html"):
+            result_text = result.to_html(
+                index=False,
+                classes="clean-table",
+                border=0
+            )
+        else:
+            result_text = str(result)
+
+        # ── Isolated Execution Logic to prevent Streamlit Variable Escaping ──
         if show_sql and response.get("sql"):
-            sql_block = f"""
-            <div class="sql-box">{response["sql"]}</div>
-            """
-
-        result_text = str(response.get("result", "No result returned."))
-
-        st.markdown(f"""
-        <div class="chat-ai">
-            <div class="chat-ai-label">AI Analyst</div>
-            {sql_block}
-            <div style='margin-top:{"10px" if show_sql else "0"};
-                        font-size:14px;color:#cbd5e1;line-height:1.6;'>
-                {result_text}
+            sql_html = f'<div class="sql-box">{response["sql"]}</div>'
+            st.markdown(f"""
+            <div class="chat-ai">
+                <div class="chat-ai-label">AI Analyst</div>
+                {sql_html}
+                <div style="margin-top: 10px; font-size: 14px; color: #cbd5e1; line-height: 1.6;">
+                    {result_text}
+                </div>
             </div>
-        </div>
-        """, unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
+        else:
+            st.markdown(f"""
+            <div class="chat-ai">
+                <div class="chat-ai-label">AI Analyst</div>
+                <div style="font-size: 14px; color: #cbd5e1; line-height: 1.6;">
+                    {result_text}
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
     elif ask_clicked and not question:
         st.markdown("""
